@@ -1,0 +1,43 @@
+﻿@page "/"
+
+@inject IJSRuntime JSRuntime
+@inject Services.GoogleCaptchaService GoogleCaptchaService
+
+@using reCAPTCHAv3.Shared.Entities.DataTransferObjects
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+@if (googleCaptchaResponseDto != null)
+{
+    <h1>token - (@token) </h1>
+    <h1>Status - (@googleCaptchaResponseDto.success) </h1>
+    <h1>Score - (@googleCaptchaResponseDto.score) </h1>
+}
+
+@code {
+
+    private string token = "";
+    public GoogleCaptchaResponseDto googleCaptchaResponseDto = new GoogleCaptchaResponseDto();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            token = await JSRuntime.InvokeAsync<string>("runCaptcha");
+            StateHasChanged();
+        }
+    }
+
+    //Now we can handle bots!
+    private async Task HandleBots()
+    {
+        googleCaptchaResponseDto = await GoogleCaptchaService.reVerify(token);
+        if (!googleCaptchaResponseDto.success || googleCaptchaResponseDto.score <= 0.5)
+        {
+            return;
+        }
+    }
+
+}
